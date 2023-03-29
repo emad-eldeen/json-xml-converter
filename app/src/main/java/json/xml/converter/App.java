@@ -10,7 +10,9 @@ public class App {
         try {
             Path path = getFilePathFromResource("input.txt");
             String fileString = String.join(" ", Files.readAllLines(path));
-            System.out.println(fileString);
+            Parser parser = ParserFactory.createParser();
+            Element element = parser.parse(fileString);
+            element.print();
         } catch (IOException e) {
             System.out.println(e.getMessage());
         }
