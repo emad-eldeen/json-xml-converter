@@ -1,28 +1,33 @@
 package json.xml.converter.xml;
 
+import json.xml.converter.json.Attribute;
+import json.xml.converter.json.JsonElement;
+import json.xml.converter.json.JsonObject;
 
-import json.xml.converter.Element;
-
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Deque;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
-public class XmlElement extends Element {
+public class XmlElement {
     String tagName;
     List<XmlAttribute> attributes = new ArrayList<>();
-    String value;
+    // in case the XML element has a string value
+    String stringValue;
     XmlElement parentElement;
     List<XmlElement> children = new ArrayList<>();
     BodyType bodyType;
 
-    public void setValue(String value) {
-        this.value = value;
+    public XmlElement() {}
+
+    public void setStringValue(String stringValue) {
+        this.stringValue = stringValue;
     }
 
-    public String getValue() {
-        return value;
+    public String getStringValue() {
+        return stringValue;
+    }
+
+    public List<XmlElement> getChildren() {
+        return children;
     }
 
     public void setBodyType(BodyType bodyType) {
@@ -48,10 +53,6 @@ public class XmlElement extends Element {
         this.attributes = attributes;
     }
 
-
-    public XmlElement() {
-    }
-
     public String getTagName() {
         return tagName;
     }
@@ -65,7 +66,7 @@ public class XmlElement extends Element {
     }
 
     public boolean hasBody() {
-        return value != null || !children.isEmpty();
+        return stringValue != null || !children.isEmpty();
     }
 
     public boolean hasChildren() {
@@ -88,21 +89,13 @@ public class XmlElement extends Element {
         return parentElement != null;
     }
 
-    /*
-    @Override
-    public String toString() {
-        String attributes = getAttributes().stream()
-                .map(XmlAttribute::toString)
-                .collect(Collectors.joining(" "));
-        if (hasBody()) {
-            return "<%s %s>%s</%s>".formatted(
-                    tagName, attributes, body, tagName);
-        }
-        return "<%s %s/>".formatted(tagName, attributes);
+    public void addAttribute(XmlAttribute xmlAttribute) {
+        attributes.add(xmlAttribute);
     }
-    */
 
-
+    /**
+     * @return the path to this xml element in the xml
+     */
     private Deque<XmlElement> getPath() {
         Deque<XmlElement> path = new ArrayDeque<>();
         XmlElement xmlElement = this;
@@ -112,18 +105,6 @@ public class XmlElement extends Element {
             path.push(xmlElement);
         }
         return path;
-    }
-
-    private String getAttributesString() {
-        StringBuilder builder = new StringBuilder();
-        if (!attributes.isEmpty()) {
-            builder.append("attributes:\n");
-            for (XmlAttribute attribute : attributes) {
-                builder.append("%s = \"%s\"%n".formatted(
-                        attribute.property(), attribute.value()));
-            }
-        }
-        return builder.toString();
     }
 
     public String getChildrenString() {
@@ -138,25 +119,69 @@ public class XmlElement extends Element {
         }
     }
 
-    @Override
-    public void print() {
-
+    // get the attributes as a string separated by space
+    String getAttributesRaw() {
+        return attributes.stream()
+                .map(XmlAttribute::toString)
+                .collect(Collectors.joining(" ", " ", ""));
     }
 
+    /**
+     * @return the xml element, including all its children, as a string
+     */
     @Override
     public String toString() {
-        return """
-                Element:
-                path = %s
-                value = %s
-                %s
-                %s%n
-                """.formatted(
-                getPath().stream()
-                        .map(XmlElement::getTagName)
-                        .collect(Collectors.joining(", ")),
-                value == null ? "null" : value,
-                getAttributesString(),
-                getChildrenString());
+        if (!hasChildren() && stringValue == null) {
+            return "<%s%s/>".formatted(tagName, getAttributesRaw());
+        } else  {
+            // body is either children elements or value
+            String body = hasChildren() ? getChildrenString() : stringValue;
+            return "<%s%s>%s</%s>".formatted(tagName, getAttributesRaw(), body, tagName);
+        }
+    }
+
+    String getPathString() {
+        return getPath().stream()
+                .map(XmlElement::getTagName)
+                .collect(Collectors.joining(", "));
+    }
+
+    public String getValueString() {
+        if (stringValue == null  || stringValue.length() == 0) {
+            return "value = null";
+        } else {
+            return "value = \"%s\"".formatted(stringValue);
+        }
+    }
+
+    private String getAttributesString() {
+        StringBuilder builder = new StringBuilder();
+        if (!attributes.isEmpty()) {
+            builder.append("attributes:\n");
+            for (XmlAttribute attribute : attributes) {
+                builder.append("%s = \"%s\"%n".formatted(
+                        attribute.property(), attribute.value()));
+            }
+        }
+        return builder.toString();
+    }
+
+    public void printObjectValueString() {
+        children.forEach(XmlElement::printTree);
+    }
+
+    public void printTree() {
+        System.out.printf("""
+                        Element:
+                        path = %s
+                        %s
+                        %s
+                        """,
+                getPathString(),
+                getValueString(),
+                getAttributesString());
+        printObjectValueString();
     }
 }
+
+
