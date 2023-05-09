@@ -1,6 +1,18 @@
 ## JSON/XML Converter
 A Java app written from scratch to parse Json and XML from string and convert between them
 
+## Technical requirements
+- Parse XML text files
+- Parse Json text files as follows:
+  - check if the JSON value starts with a curly brace that can be presented as a start of child nodes and continue to check subkeys.
+  - if the json object complies with the following rules, it should be parsed as an _xml object with attributes_. Otherwise, it should be considered as a normal object:
+    1. The object has a key with the same name as the object, with a `#` symbol in front of it. For example, if the key of the object is "obj" then the value of this object has to be inside `#obj` key inside this object. Note that if such a key does not exist in the object, this object should not be considered a single XML object with attributes.
+    2. The value object contains the `#value` key and all other attributes begin with the `@` symbol and are longer than 1 character. If this object has at least one key that equals `@` or does not start with `@` (except #value), then this object should not be considered a single XML object with attributes.
+    3. If the value of any key starting with `@` is not a number, string or null (in other words, it will be an object starting with "{"), then this object cannot be an attribute of a single XML object and the `@` symbol should be removed from this key, and thus the object cannot be considered a single XML object.
+- Convert between XML and JSON
+- Print raw XML and JSON
+- Print tree of XML and JSON elements
+
 ## Knowledge used
 - Scanning and parsing user input
 - Exception handling
